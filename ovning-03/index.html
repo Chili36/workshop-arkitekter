@@ -289,6 +289,32 @@ async function saveResponse({ name, rows, date }) {
   return res.json();
 }
 
+async function clearResponse() {
+  const session_id = getSessionId();
+  const url = SUPABASE_URL + '/rest/v1/workshop_responses' +
+    '?exercise_id=eq.' + encodeURIComponent(EXERCISE_ID) +
+    '&session_id=eq.' + encodeURIComponent(session_id);
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+    },
+    body: JSON.stringify({
+      name: null,
+      payload: { rows: [] },
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error('Supabase ' + res.status + ': ' + text);
+  }
+  return res.json();
+}
+
 const REASON_OPTIONS = [
   { id: 'roll', label: 'min roll' },
   { id: 'kompetens', label: 'min kompetens' },
@@ -361,10 +387,16 @@ function App() {
   };
   const addRow = (seed = '') => setRows(rs => [...rs, makeRow(seed)]);
   const removeRow = (id) => setRows(rs => rs.length > 1 ? rs.filter(r => r.id !== id) : rs);
-  const clearAll = () => {
-    if (confirm('Rensa alla rader och börja om?')) {
-      setRows([makeRow(''), makeRow(''), makeRow('')]);
+  const clearAll = async () => {
+    if (!confirm('Rensa alla rader och börja om? Detta tar även bort dina sparade svar.')) return;
+    try {
+      await clearResponse();
+    } catch (e) {
+      alert('Kunde inte rensa sparade svar i databasen — försök igen, eller ladda om sidan.\n\n' + (e.message || e));
+      return;
     }
+    setRows([makeRow(''), makeRow(''), makeRow('')]);
+    setName('');
   };
 
   // Derived
