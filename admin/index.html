@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin — Workshop arkitekter · Övning 03</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --paper: #F2EDE3;
+    --paper-2: #EBE4D6;
+    --paper-3: #E2D9C6;
+    --ink: #1B1A16;
+    --ink-2: #3A372E;
+    --ink-3: #6B6555;
+    --ink-4: #9A9281;
+    --rule: #C9BFA8;
+    --rule-soft: #D9D0BA;
+    --clay: oklch(0.55 0.11 45);
+    --moss: oklch(0.5 0.06 140);
+    --rust: oklch(0.5 0.13 35);
+    --warn: oklch(0.55 0.14 25);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    opacity: 0.35; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.09 0 0 0 0 0.07 0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  #root { position: relative; z-index: 2; max-width: 1480px; margin: 0 auto; padding: 48px 56px 80px; }
+  .serif { font-family: 'Newsreader', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+  .mono  { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  .eyebrow { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); }
+  .rule { height: 1px; background: linear-gradient(90deg, transparent, var(--rule) 8%, var(--rule) 92%, transparent); }
+  .bar-track { display: flex; height: 10px; background: var(--paper-3); width: 100%; }
+  .bar-seg { height: 100%; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .pulse { animation: pulse 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useMemo, useRef } = React;
+
+const SUPABASE_URL = 'https://gojgcksmhlxtuqhkylcy.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_1ciI0KDhicZvb4tbVETS8w_yEIJEr2W';
+const EXERCISE_ID = 'ovning-03';
+const POLL_MS = 8000;
+
+const REASON_LABEL = {
+  roll: 'min roll',
+  kompetens: 'min kompetens',
+  historik: 'min historik',
+  tid: 'jag hade tid',
+  hjalpa: 'jag ville hjälpa',
+  tryck: 'projekttryck',
+  ingen: 'ingen annan äger frågan',
+  otydligt: 'otydligt mandat',
+};
+
+const VERDICTS = [
+  { id: 'now',   short: 'Snarast',          color: 'var(--warn)' },
+  { id: 'later', short: 'Över tid',         color: 'var(--rust)' },
+  { id: 'share', short: 'Delas',            color: 'var(--clay)' },
+  { id: 'yes',   short: 'Stannar',          color: 'var(--moss)' },
+];
+
+async function fetchResponses() {
+  const url = SUPABASE_URL + '/rest/v1/workshop_responses' +
+    '?exercise_id=eq.' + encodeURIComponent(EXERCISE_ID) +
+    '&select=name,session_id,payload,updated_at' +
+    '&order=updated_at.desc';
+  const res = await fetch(url, {
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    },
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error('Supabase ' + res.status + ': ' + await res.text());
+  return res.json();
+}
+
+function aggregate(rows) {
+  const flatTasks = [];
+  const verdictTotals = { yes: 0, share: 0, later: 0, now: 0, none: 0 };
+  const reasonTallies = {};
+  let participantCount = 0;
+  let nameSet = new Set();
+  for (const r of rows) {
+    const inner = (r.payload && r.payload.rows) || [];
+    if (inner.length === 0) continue;
+    participantCount++;
+    if (r.name && r.name.trim()) nameSet.add(r.name.trim());
+    for (const t of inner) {
+      const verdict = t.verdict || 'none';
+      verdictTotals[verdict] = (verdictTotals[verdict] || 0) + 1;
+      for (const reason of (t.reasons || [])) {
+        reasonTallies[reason] = (reasonTallies[reason] || 0) + 1;
+      }
+      flatTasks.push({
+        task: t.task || '',
+        verdict: t.verdict || null,
+        reasons: t.reasons || [],
+        requires: t.requires || '',
+        name: r.name || '',
+        session_id: r.session_id,
+      });
+    }
+  }
+  const total = flatTasks.length;
+  const sortedReasons = Object.entries(reasonTallies)
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1]);
+  return { flatTasks, verdictTotals, reasonTallies, sortedReasons, total, participantCount, namedCount: nameSet.size };
+}
+
+function App() {
+  const [rows, setRows] = useState([]);
+  const [error, setError] = useState('');
+  const [lastFetched, setLastFetched] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const timerRef = useRef(null);
+
+  const tick = async () => {
+    try {
+      const data = await fetchResponses();
+      setRows(data);
+      setLastFetched(new Date());
+      setError('');
+    } catch (e) {
+      setError(String(e.message || e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    tick();
+    timerRef.current = setInterval(tick, POLL_MS);
+    return () => clearInterval(timerRef.current);
+  }, []);
+
+  const agg = useMemo(() => aggregate(rows), [rows]);
+  const urgentTasks = agg.flatTasks.filter(t => t.verdict === 'now');
+  const shareTasks  = agg.flatTasks.filter(t => t.verdict === 'share');
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 18 }}>
+        <span className="eyebrow">Workshop arkitekter · Övning 03 · Live</span>
+        <span className="mono" style={{ fontSize: 11, color: 'var(--ink-4)', letterSpacing: '0.08em' }}>
+          {error
+            ? <span style={{ color: 'var(--warn)' }}>fel: kunde inte hämta</span>
+            : loading
+              ? <span className="pulse">hämtar…</span>
+              : <>uppdateras var {POLL_MS/1000}s {lastFetched && '· senast ' + lastFetched.toLocaleTimeString('sv-SE', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}</>
+          }
+        </span>
+      </div>
+
+      <h1 className="serif" style={{ fontSize: 64, lineHeight: 0.98, letterSpacing: '-0.025em', margin: '12px 0 6px', fontWeight: 500 }}>
+        Vad gör vi, <em style={{ fontWeight: 400 }}>och varför ligger det hos oss?</em>
+      </h1>
+
+      <div className="rule" style={{ margin: '32px 0 36px' }}></div>
+
+      {/* HEADLINE STATS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32, marginBottom: 44 }}>
+        <Stat n={agg.participantCount} label="personer" sub={agg.namedCount > 0 ? agg.namedCount + ' med namn' : 'inga namn än'} />
+        <Stat n={agg.total} label="uppgifter listade" />
+        <Stat n={agg.verdictTotals.now} label="ska flyttas snarast" tone="var(--warn)" />
+        <Stat n={agg.verdictTotals.later + agg.verdictTotals.share} label="behöver flyttas eller delas" tone="var(--rust)" />
+      </div>
+
+      {/* DISTRIBUTION BAR */}
+      <div style={{ marginBottom: 48 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span className="eyebrow">Fördelning över alla uppgifter</span>
+          <span className="mono" style={{ fontSize: 11, color: 'var(--ink-4)' }}>n = {agg.total}</span>
+        </div>
+        <div className="bar-track">
+          {VERDICTS.concat([{ id: 'none', short: 'Oavgjort', color: 'var(--paper-3)' }]).map(v => {
+            const n = agg.verdictTotals[v.id] || 0;
+            if (!agg.total || !n) return null;
+            return <div key={v.id} className="bar-seg" style={{ width: (n / agg.total * 100) + '%', background: v.color }} title={v.short + ': ' + n}></div>;
+          })}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 22, marginTop: 14 }}>
+          {VERDICTS.map(v => (
+            <span key={v.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 10, height: 10, background: v.color, display: 'inline-block' }}></span>
+              <span style={{ fontSize: 13.5 }}>{v.short}</span>
+              <span className="mono" style={{ fontSize: 11.5, color: 'var(--ink-3)', letterSpacing: '0.05em' }}>{agg.verdictTotals[v.id] || 0}</span>
+            </span>
+          ))}
+          {agg.verdictTotals.none > 0 && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 10, height: 10, background: 'var(--paper-3)', display: 'inline-block' }}></span>
+              <span style={{ fontSize: 13.5, color: 'var(--ink-3)' }}>Oavgjort</span>
+              <span className="mono" style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{agg.verdictTotals.none}</span>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* TWO-COLUMN BODY */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 56 }}>
+        {/* LEFT — wall of urgent tasks */}
+        <section>
+          <div style={{ borderTop: '2px solid var(--warn)', paddingTop: 14, marginBottom: 18 }}>
+            <span className="eyebrow" style={{ color: 'var(--warn)' }}>Snarast — flytta nu</span>
+          </div>
+          {urgentTasks.length === 0 ? (
+            <div className="serif" style={{ fontSize: 22, color: 'var(--ink-4)', fontStyle: 'italic' }}>
+              Inga uppgifter markerade som snarast än.
+            </div>
+          ) : (
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {urgentTasks.map((t, i) => (
+                <TaskItem key={i} task={t} accent="var(--warn)" />
+              ))}
+            </ul>
+          )}
+
+          {shareTasks.length > 0 && (
+            <>
+              <div style={{ borderTop: '2px solid var(--clay)', paddingTop: 14, marginTop: 40, marginBottom: 18 }}>
+                <span className="eyebrow" style={{ color: 'var(--clay)' }}>Behöver delas</span>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {shareTasks.map((t, i) => (
+                  <TaskItem key={i} task={t} accent="var(--clay)" />
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+
+        {/* RIGHT — top reasons */}
+        <aside>
+          <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 14, marginBottom: 18 }}>
+            <span className="eyebrow">Vanligaste skälen</span>
+          </div>
+          {agg.sortedReasons.length === 0 ? (
+            <div className="serif" style={{ fontSize: 22, color: 'var(--ink-4)', fontStyle: 'italic' }}>
+              Inga skäl markerade än.
+            </div>
+          ) : (
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {agg.sortedReasons.map(([id, n], i) => {
+                const max = agg.sortedReasons[0][1];
+                return (
+                  <li key={id} style={{ display: 'grid', gridTemplateColumns: '1fr 50px', alignItems: 'baseline', gap: 12, padding: '14px 0', borderBottom: '1px solid var(--rule-soft)' }}>
+                    <div>
+                      <div className="serif" style={{ fontSize: 22, lineHeight: 1.2, marginBottom: 6 }}>"{REASON_LABEL[id] || id}"</div>
+                      <div style={{ height: 4, background: 'var(--paper-3)' }}>
+                        <div style={{ height: '100%', width: (n / max * 100) + '%', background: 'var(--ink)' }}></div>
+                      </div>
+                    </div>
+                    <span className="mono" style={{ fontSize: 14, color: 'var(--ink-3)', textAlign: 'right' }}>{n}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </aside>
+      </div>
+
+      {agg.participantCount === 0 && (
+        <div style={{ marginTop: 64, padding: '60px 32px', textAlign: 'center', border: '1px solid var(--rule-soft)' }}>
+          <div className="serif" style={{ fontSize: 28, color: 'var(--ink-3)', fontStyle: 'italic' }}>
+            Inga sparade svar än.
+          </div>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 14, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+            Sidan uppdateras automatiskt när någon trycker på "spara svaren".
+          </div>
+        </div>
+      )}
+
+      <footer style={{ marginTop: 80, paddingTop: 24, borderTop: '1px solid var(--rule-soft)', display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-4)' }} className="mono">
+        <span>Workshop arkitekter · admin</span>
+        <span>{rows.length} insamlade rader · pollar var {POLL_MS/1000}s</span>
+      </footer>
+    </div>
+  );
+}
+
+function Stat({ n, label, sub, tone }) {
+  return (
+    <div>
+      <div className="serif" style={{ fontSize: 64, lineHeight: 0.95, fontWeight: 500, letterSpacing: '-0.025em', color: tone || 'var(--ink)' }}>{n}</div>
+      <div style={{ fontSize: 14, color: 'var(--ink-2)', marginTop: 8 }}>{label}</div>
+      {sub && <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-4)', marginTop: 6, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{sub}</div>}
+    </div>
+  );
+}
+
+function TaskItem({ task, accent }) {
+  return (
+    <li style={{ padding: '16px 0', borderBottom: '1px solid var(--rule-soft)', display: 'grid', gridTemplateColumns: '1fr auto', gap: 18, alignItems: 'baseline' }}>
+      <div>
+        <div className="serif" style={{ fontSize: 22, lineHeight: 1.3, color: 'var(--ink)' }}>{task.task}</div>
+        {task.requires && task.requires.trim() && (
+          <div className="serif" style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--ink-2)', marginTop: 6, paddingLeft: 12, borderLeft: '1px solid ' + accent }}>
+            {task.requires}
+          </div>
+        )}
+      </div>
+      <span className="mono" style={{ fontSize: 11, color: 'var(--ink-3)', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
+        {task.name ? task.name : '— anonym'}
+      </span>
+    </li>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
