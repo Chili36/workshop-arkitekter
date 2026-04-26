@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Övning — Vad gör jag, och varför?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --paper: #F2EDE3;
+    --paper-2: #EBE4D6;
+    --paper-3: #E2D9C6;
+    --ink: #1B1A16;
+    --ink-2: #3A372E;
+    --ink-3: #6B6555;
+    --ink-4: #9A9281;
+    --rule: #C9BFA8;
+    --rule-soft: #D9D0BA;
+    --clay: oklch(0.55 0.11 45);
+    --clay-soft: oklch(0.92 0.04 65);
+    --moss: oklch(0.5 0.06 140);
+    --rust: oklch(0.5 0.13 35);
+    --warn: oklch(0.55 0.14 25);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    opacity: 0.35; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.09 0 0 0 0 0.07 0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  #root { position: relative; z-index: 2; }
+  .serif { font-family: 'Newsreader', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  .hairline { border-top: 1px solid var(--rule); }
+  .hairline-soft { border-top: 1px solid var(--rule-soft); }
+  button { font-family: inherit; cursor: pointer; }
+  input, textarea { font-family: inherit; color: inherit; background: transparent; border: 0; outline: 0; }
+  textarea { resize: none; }
+  ::selection { background: var(--clay); color: var(--paper); }
+
+  /* table */
+  .row-grid {
+    display: grid;
+    grid-template-columns: 32px minmax(220px, 1.4fr) minmax(200px, 1.1fr) minmax(180px, 1fr) minmax(220px, 1.3fr) 32px;
+    gap: 0;
+  }
+  .cell {
+    border-right: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule-soft);
+    padding: 14px 16px;
+    background: transparent;
+    min-height: 92px;
+    position: relative;
+  }
+  .cell:last-child { border-right: 0; }
+  .row:hover .row-num { color: var(--ink-2); }
+  .row.focus-within { background: rgba(255,255,255,0.4); }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px 5px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: transparent;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    transition: all 120ms ease;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--ink-3); color: var(--ink); }
+  .chip.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .chip.active.tone-yes { background: var(--moss); border-color: var(--moss); }
+  .chip.active.tone-share { background: var(--clay); border-color: var(--clay); }
+  .chip.active.tone-later { background: var(--rust); border-color: var(--rust); }
+  .chip.active.tone-now { background: var(--warn); border-color: var(--warn); }
+
+  .field-input {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.45;
+    padding: 0;
+    min-height: 64px;
+  }
+  .field-input::placeholder { color: var(--ink-4); font-style: italic; }
+
+  .icon-btn {
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 4px;
+    border: 0; background: transparent;
+    color: var(--ink-4);
+    transition: all 120ms ease;
+  }
+  .icon-btn:hover { background: var(--paper-3); color: var(--ink); }
+
+  .num-mark {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-4);
+    letter-spacing: 0.08em;
+  }
+
+  .add-row-btn {
+    width: 100%;
+    text-align: left;
+    padding: 14px 16px 14px 48px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--rule-soft);
+    color: var(--ink-3);
+    font-size: 13.5px;
+    font-style: italic;
+    transition: all 150ms ease;
+    font-family: 'Newsreader', Georgia, serif;
+  }
+  .add-row-btn:hover { background: rgba(255,255,255,0.5); color: var(--ink); }
+
+  .col-head {
+    padding: 14px 16px 12px;
+    border-right: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule);
+  }
+  .col-head:last-child { border-right: 0; }
+  .col-head .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .col-head .question {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 19px;
+    line-height: 1.25;
+    color: var(--ink);
+    margin-top: 6px;
+    letter-spacing: -0.01em;
+  }
+
+  .pill-counter {
+    display: inline-flex; align-items: baseline; gap: 8px;
+    padding: 6px 12px 7px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    background: transparent;
+  }
+  .pill-counter strong { color: var(--ink); font-weight: 500; }
+
+  .tab {
+    padding: 10px 18px 12px;
+    border: 0;
+    background: transparent;
+    color: var(--ink-3);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    transition: all 150ms ease;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+  .summary-card {
+    background: var(--paper-2);
+    border: 1px solid var(--rule-soft);
+    padding: 28px 32px;
+  }
+  .summary-stat {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 56px;
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+  }
+  .bar-track {
+    height: 6px;
+    background: var(--paper-3);
+    border-radius: 999px;
+    overflow: hidden;
+    display: flex;
+  }
+  .bar-seg { height: 100%; }
+
+  .kbd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    padding: 2px 6px;
+    border: 1px solid var(--rule);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    color: var(--ink-3);
+    background: rgba(255,255,255,0.4);
+  }
+
+  .editorial-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rule) 8%, var(--rule) 92%, transparent);
+  }
+
+  /* Cross-out for rows marked "move" */
+  .row.move-now { background: linear-gradient(90deg, rgba(193,68,38,0.04), rgba(193,68,38,0.02)); }
+  .row.move-later { background: linear-gradient(90deg, rgba(150,90,40,0.03), transparent); }
+  .row.share { background: linear-gradient(90deg, rgba(160,90,50,0.025), transparent); }
+
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+
+  @media (max-width: 1100px) {
+    .row-grid { grid-template-columns: 28px minmax(180px, 1.3fr) minmax(170px, 1fr) minmax(160px, 0.9fr) minmax(180px, 1.2fr) 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useRef, useMemo } = React;
+
+const STORAGE_KEY = 'workshop_arkitekter_ovning_03_v1';
+
+const REASON_OPTIONS = [
+  { id: 'roll', label: 'min roll' },
+  { id: 'kompetens', label: 'min kompetens' },
+  { id: 'historik', label: 'min historik' },
+  { id: 'tid', label: 'jag hade tid' },
+  { id: 'hjalpa', label: 'jag ville hjälpa' },
+  { id: 'tryck', label: 'projekttryck' },
+  { id: 'ingen', label: 'ingen annan äger frågan' },
+  { id: 'otydligt', label: 'otydligt mandat' },
+];
+
+const VERDICT_OPTIONS = [
+  { id: 'yes',     label: 'ja, ska ligga här',         tone: 'yes',   short: 'Stannar' },
+  { id: 'share',   label: 'ja, men behöver delas',     tone: 'share', short: 'Delas' },
+  { id: 'later',   label: 'nej, bör flyttas över tid', tone: 'later', short: 'Flyttas över tid' },
+  { id: 'now',     label: 'nej, bör flyttas snarast',  tone: 'now',   short: 'Flyttas snarast' },
+];
+
+const SAMPLE_TASKS = [
+  'Godkänner tidplaner åt projektledarna',
+  'Svarar på tekniska frågor från entreprenör',
+  'Kvalitetssäkrar ritningar inför leverans',
+  'Bokar interna möten åt teamet',
+  'Tar emot beställarens småförändringar',
+  'Skriver veckorapporter till ledningen',
+];
+
+function makeRow(seed = '') {
+  return {
+    id: Math.random().toString(36).slice(2, 9),
+    task: seed,
+    reasons: [],
+    verdict: null,
+    requires: '',
+  };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
+}
+function saveState(state) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function App() {
+  const initial = loadState();
+  const [rows, setRows] = useState(initial?.rows || [
+    makeRow(''), makeRow(''), makeRow(''),
+  ]);
+  const [name, setName] = useState(initial?.name || '');
+  const [date, setDate] = useState(initial?.date || new Date().toLocaleDateString('sv-SE', { year:'numeric', month:'long', day:'numeric' }));
+  const [view, setView] = useState('exercise'); // 'exercise' | 'reflection'
+  const [showHelp, setShowHelp] = useState(false);
+
+  useEffect(() => { saveState({ rows, name, date }); }, [rows, name, date]);
+
+  const updateRow = (id, patch) => {
+    setRows(rs => rs.map(r => r.id === id ? { ...r, ...patch } : r));
+  };
+  const toggleReason = (id, reasonId) => {
+    setRows(rs => rs.map(r => {
+      if (r.id !== id) return r;
+      const has = r.reasons.includes(reasonId);
+      return { ...r, reasons: has ? r.reasons.filter(x => x !== reasonId) : [...r.reasons, reasonId] };
+    }));
+  };
+  const addRow = (seed = '') => setRows(rs => [...rs, makeRow(seed)]);
+  const removeRow = (id) => setRows(rs => rs.length > 1 ? rs.filter(r => r.id !== id) : rs);
+  const clearAll = () => {
+    if (confirm('Rensa alla rader och börja om?')) {
+      setRows([makeRow(''), makeRow(''), makeRow('')]);
+    }
+  };
+
+  // Derived
+  const filled = rows.filter(r => r.task.trim().length > 0);
+  const totals = useMemo(() => {
+    const out = { yes: 0, share: 0, later: 0, now: 0, none: 0 };
+    filled.forEach(r => { if (r.verdict) out[r.verdict]++; else out.none++; });
+    return out;
+  }, [filled]);
+  const reasonTallies = useMemo(() => {
+    const out = {};
+    REASON_OPTIONS.forEach(o => out[o.id] = 0);
+    filled.forEach(r => r.reasons.forEach(x => out[x] = (out[x]||0)+1));
+    return out;
+  }, [filled]);
+
+  return (
+    <div style={{ maxWidth: 1320, margin: '0 auto', padding: '48px 56px 120px' }}>
+
+      {/* MASTHEAD */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 36 }}>
+        <div>
+          <div className="mono" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
+            Workshop arkitekter · Övning 03
+          </div>
+          <h1 className="serif" style={{ fontSize: 64, lineHeight: 0.98, margin: '14px 0 0', letterSpacing: '-0.025em', fontWeight: 500 }}>
+            Vad gör jag,<br />
+            <em style={{ fontWeight: 400 }}>och varför ligger det hos mig?</em>
+          </h1>
+        </div>
+        <div style={{ textAlign: 'right', minWidth: 220 }}>
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>
+            Deltagare
+          </div>
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="ditt namn"
+            className="serif"
+            style={{ fontSize: 22, textAlign: 'right', width: '100%', borderBottom: '1px solid var(--rule)', paddingBottom: 4, fontStyle: name ? 'normal' : 'italic' }}
+          />
+          <div className="mono" style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 10 }}>
+            {date}
+          </div>
+        </div>
+      </header>
+
+      <div className="editorial-rule" style={{ marginBottom: 36 }}></div>
+
+      {/* INTRO */}
+      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, marginBottom: 48 }}>
+        <div>
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 14 }}>
+            Den egentliga övningen
+          </div>
+          <p className="serif" style={{ fontSize: 22, lineHeight: 1.4, margin: 0, color: 'var(--ink)' }}>
+            Lista vad du gör. Sätt ord på <em>varför</em> det hamnade hos dig.
+            Avgör om det är rätt. Identifiera vad som krävs om det ska flyttas.
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <Step n="01" t="Lista" d="En rad per uppgift. Stort som smått. Inget filter." />
+          <Step n="02" t="Förklara" d="Varför hamnade just den här hos dig? Kryssa det som stämmer." />
+          <Step n="03" t="Avgör" d="Är det rätt person? Välj ett av fyra svar." />
+          <Step n="04" t="Lös" d="Om den ska flyttas — vad krävs konkret för att det ska kunna ske?" />
+        </div>
+      </section>
+
+      {/* TABS + COUNTER */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0, borderBottom: '1px solid var(--rule)' }}>
+        <div style={{ display: 'flex' }}>
+          <button className={`tab ${view==='exercise' ? 'active' : ''}`} onClick={() => setView('exercise')}>
+            Tabellen
+          </button>
+          <button className={`tab ${view==='reflection' ? 'active' : ''}`} onClick={() => setView('reflection')}>
+            Reflektion
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span className="pill-counter">
+            <strong>{filled.length}</strong> rad{filled.length === 1 ? '' : 'er'} ifyllda
+          </span>
+          <button className="pill-counter" onClick={() => setShowHelp(s => !s)} style={{ cursor: 'pointer' }}>
+            {showHelp ? 'dölj hjälp' : 'visa hjälp'}
+          </button>
+          <button className="pill-counter" onClick={clearAll} style={{ cursor: 'pointer' }}>
+            rensa
+          </button>
+        </div>
+      </div>
+
+      {showHelp && (
+        <div style={{ background: 'var(--paper-2)', borderLeft: '2px solid var(--clay)', padding: '16px 22px', marginTop: 0, fontSize: 13.5, color: 'var(--ink-2)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+          <div>
+            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 4 }}>Tänk så här</div>
+            Skriv ner en sak du faktiskt gjort den senaste månaden — inte din rolltitel.
+          </div>
+          <div>
+            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 4 }}>Flera skäl</div>
+            Du kan kryssa flera anledningar. Många uppgifter har mer än en orsak.
+          </div>
+          <div>
+            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 4 }}>Var ärlig</div>
+            "Jag hade tid" och "ingen annan äger frågan" är vanligare än man tror.
+          </div>
+          <div>
+            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 4 }}>Konkret om flytt</div>
+            "Vad krävs?" — namnge personen, mandatet, eller verktyget. Inte "tydligare struktur".
+          </div>
+        </div>
+      )}
+
+      {view === 'exercise' && (
+        <Table
+          rows={rows}
+          updateRow={updateRow}
+          toggleReason={toggleReason}
+          addRow={addRow}
+          removeRow={removeRow}
+        />
+      )}
+      {view === 'reflection' && (
+        <Reflection
+          rows={filled}
+          totals={totals}
+          reasonTallies={reasonTallies}
+          onBack={() => setView('exercise')}
+        />
+      )}
+
+      {view === 'exercise' && (
+        <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+            <span className="kbd">Tab</span> nästa fält · <span className="kbd">+ rad</span> nederst · sparas automatiskt
+          </div>
+          <button
+            onClick={() => setView('reflection')}
+            disabled={filled.length === 0}
+            style={{
+              padding: '12px 22px',
+              background: filled.length ? 'var(--ink)' : 'var(--paper-3)',
+              color: filled.length ? 'var(--paper)' : 'var(--ink-4)',
+              border: 0,
+              fontFamily: 'IBM Plex Mono, monospace',
+              fontSize: 11,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              cursor: filled.length ? 'pointer' : 'not-allowed',
+            }}
+          >
+            Sammanställ →
+          </button>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer style={{ marginTop: 80, paddingTop: 24, borderTop: '1px solid var(--rule-soft)', display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-4)' }} className="mono">
+        <span>Workshop arkitekter</span>
+        <span>Bästa sammanslagna övningen · v1</span>
+        <span>Spara, skriv ut eller dela skärmen</span>
+      </footer>
+    </div>
+  );
+}
+
+function Step({ n, t, d }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr', gap: 14, alignItems: 'baseline' }}>
+      <div className="mono" style={{ fontSize: 11, color: 'var(--ink-4)', letterSpacing: '0.08em' }}>{n}</div>
+      <div>
+        <div style={{ fontSize: 14.5, fontWeight: 500, color: 'var(--ink)', marginBottom: 2 }}>{t}</div>
+        <div style={{ fontSize: 13.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>{d}</div>
+      </div>
+    </div>
+  );
+}
+
+function Table({ rows, updateRow, toggleReason, addRow, removeRow }) {
+  return (
+    <div style={{ marginTop: 0, borderLeft: '1px solid var(--rule-soft)', borderRight: '1px solid var(--rule-soft)' }}>
+      {/* Column headers */}
+      <div className="row-grid" style={{ background: 'var(--paper-2)' }}>
+        <div className="col-head" style={{ borderRight: '1px solid var(--rule-soft)' }}>
+          <span className="mono" style={{ fontSize: 10, color: 'var(--ink-4)' }}>#</span>
+        </div>
+        <div className="col-head">
+          <div className="label">Kolumn 1</div>
+          <div className="question">Uppgift jag gör i dag</div>
+        </div>
+        <div className="col-head">
+          <div className="label">Kolumn 2 · välj en eller flera</div>
+          <div className="question">Varför ligger den hos mig?</div>
+        </div>
+        <div className="col-head">
+          <div className="label">Kolumn 3 · välj ett</div>
+          <div className="question">Är det rätt?</div>
+        </div>
+        <div className="col-head">
+          <div className="label">Kolumn 4</div>
+          <div className="question">Om inte, vad krävs?</div>
+        </div>
+        <div className="col-head"></div>
+      </div>
+
+      {/* Rows */}
+      {rows.map((r, idx) => (
+        <Row
+          key={r.id}
+          row={r}
+          idx={idx}
+          updateRow={updateRow}
+          toggleReason={toggleReason}
+          removeRow={removeRow}
+          canRemove={rows.length > 1}
+        />
+      ))}
+
+      {/* Add */}
+      <div className="row-grid">
+        <div className="cell" style={{ minHeight: 0, padding: 0, background: 'transparent', borderBottom: '1px solid var(--rule-soft)' }}></div>
+        <div style={{ gridColumn: '2 / 7' }}>
+          <button className="add-row-btn" onClick={() => addRow('')}>
+            + lägg till en till uppgift
+          </button>
+        </div>
+      </div>
+
+      {/* Sample suggestions */}
+      <div style={{ padding: '14px 16px 0 48px', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+        <span className="mono" style={{ fontSize: 10.5, color: 'var(--ink-4)', letterSpacing: '0.1em', textTransform: 'uppercase', marginRight: 6 }}>
+          fastnar du? prova:
+        </span>
+        {SAMPLE_TASKS.map(s => (
+          <button
+            key={s}
+            onClick={() => addRow(s)}
+            className="chip"
+            style={{ fontSize: 12, fontStyle: 'italic', fontFamily: 'Newsreader, serif' }}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Row({ row, idx, updateRow, toggleReason, removeRow, canRemove }) {
+  const verdictTone = row.verdict;
+  const rowClass = `row ${verdictTone === 'now' ? 'move-now' : verdictTone === 'later' ? 'move-later' : verdictTone === 'share' ? 'share' : ''}`;
+
+  return (
+    <div className={`row-grid ${rowClass}`}>
+      {/* Number */}
+      <div className="cell" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 18, background: 'var(--paper-2)' }}>
+        <span className="num-mark row-num">{String(idx + 1).padStart(2, '0')}</span>
+      </div>
+
+      {/* Task */}
+      <div className="cell">
+        <textarea
+          className="field-input"
+          value={row.task}
+          onChange={e => updateRow(row.id, { task: e.target.value })}
+          placeholder="t.ex. Godkänner ändringar i bygghandlingar"
+          rows={3}
+        />
+      </div>
+
+      {/* Reasons */}
+      <div className="cell" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignContent: 'flex-start' }}>
+        {REASON_OPTIONS.map(opt => (
+          <button
+            key={opt.id}
+            className={`chip ${row.reasons.includes(opt.id) ? 'active' : ''}`}
+            onClick={() => toggleReason(row.id, opt.id)}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Verdict */}
+      <div className="cell" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+        {VERDICT_OPTIONS.map(opt => (
+          <button
+            key={opt.id}
+            className={`chip ${row.verdict === opt.id ? `active tone-${opt.tone}` : ''}`}
+            onClick={() => updateRow(row.id, { verdict: row.verdict === opt.id ? null : opt.id })}
+            style={{ fontSize: 12.5 }}
+          >
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+              background: row.verdict === opt.id ? 'var(--paper)' :
+                opt.tone === 'yes' ? 'var(--moss)' :
+                opt.tone === 'share' ? 'var(--clay)' :
+                opt.tone === 'later' ? 'var(--rust)' : 'var(--warn)' }}></span>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Requires */}
+      <div className="cell">
+        <textarea
+          className="field-input"
+          value={row.requires}
+          onChange={e => updateRow(row.id, { requires: e.target.value })}
+          placeholder={
+            row.verdict === 'yes' ? '— ligger rätt, inget krävs' :
+            row.verdict === 'share' ? 'vem delar? och hur ser delningen ut?' :
+            row.verdict === 'later' ? 'vad ska finnas på plats först?' :
+            row.verdict === 'now' ? 'till vem? vad behöver de för att ta över?' :
+            'konkret: person, mandat, verktyg, tid'
+          }
+          rows={3}
+          disabled={row.verdict === 'yes'}
+          style={{ opacity: row.verdict === 'yes' ? 0.4 : 1 }}
+        />
+      </div>
+
+      {/* Remove */}
+      <div className="cell" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 16, background: 'var(--paper-2)' }}>
+        {canRemove && (
+          <button className="icon-btn" onClick={() => removeRow(row.id)} title="Ta bort rad">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Reflection({ rows, totals, reasonTallies, onBack }) {
+  if (rows.length === 0) {
+    return (
+      <div style={{ padding: '80px 32px', textAlign: 'center', border: '1px solid var(--rule-soft)', borderTop: 0 }}>
+        <div className="serif" style={{ fontSize: 24, color: 'var(--ink-3)', fontStyle: 'italic' }}>
+          Inga ifyllda rader än.
+        </div>
+        <button onClick={onBack} className="pill-counter" style={{ marginTop: 20, cursor: 'pointer' }}>
+          ← tillbaka till tabellen
+        </button>
+      </div>
+    );
+  }
+
+  const total = rows.length;
+  const stays = totals.yes;
+  const moves = totals.now + totals.later;
+  const shares = totals.share;
+  const undecided = totals.none;
+
+  const sortedReasons = Object.entries(reasonTallies)
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1]);
+
+  const topReason = sortedReasons[0];
+  const REASON_LABEL = Object.fromEntries(REASON_OPTIONS.map(o => [o.id, o.label]));
+
+  const segs = [
+    { id: 'yes', n: totals.yes, color: 'var(--moss)' },
+    { id: 'share', n: totals.share, color: 'var(--clay)' },
+    { id: 'later', n: totals.later, color: 'var(--rust)' },
+    { id: 'now', n: totals.now, color: 'var(--warn)' },
+    { id: 'none', n: totals.none, color: 'var(--paper-3)' },
+  ];
+
+  return (
+    <div style={{ padding: '40px 0 0' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 40, marginBottom: 40 }}>
+        <div>
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 14 }}>
+            Sammanställning
+          </div>
+          <h2 className="serif" style={{ fontSize: 44, lineHeight: 1.05, margin: 0, fontWeight: 500, letterSpacing: '-0.02em' }}>
+            Av <em>{total}</em> uppgift{total === 1 ? '' : 'er'} du listade —
+          </h2>
+          <p className="serif" style={{ fontSize: 22, lineHeight: 1.45, color: 'var(--ink-2)', marginTop: 16 }}>
+            {stays > 0 && <span><strong style={{ color: 'var(--moss)' }}>{stays}</strong> ligger rätt hos dig. </span>}
+            {shares > 0 && <span><strong style={{ color: 'var(--clay)' }}>{shares}</strong> behöver delas. </span>}
+            {moves > 0 && <span><strong style={{ color: 'var(--rust)' }}>{moves}</strong> bör flyttas{totals.now > 0 ? ' — varav ' + totals.now + ' snarast' : ''}. </span>}
+            {undecided > 0 && <span style={{ color: 'var(--ink-4)' }}>{undecided} är fortfarande oavgjorda.</span>}
+          </p>
+        </div>
+        <div className="summary-card">
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 16 }}>
+            Vanligaste skälet
+          </div>
+          {topReason ? (
+            <>
+              <div className="serif" style={{ fontSize: 36, lineHeight: 1.1, fontWeight: 500, letterSpacing: '-0.02em' }}>
+                "{REASON_LABEL[topReason[0]]}"
+              </div>
+              <div className="mono" style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 10 }}>
+                förekommer på {topReason[1]} av {total} rader
+              </div>
+            </>
+          ) : (
+            <div className="serif" style={{ fontSize: 22, color: 'var(--ink-4)', fontStyle: 'italic' }}>
+              Inga skäl markerade än.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Distribution bar */}
+      <div style={{ marginBottom: 40 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span className="mono" style={{ fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
+            Fördelning
+          </span>
+          <span className="mono" style={{ fontSize: 10.5, color: 'var(--ink-4)' }}>
+            n = {total}
+          </span>
+        </div>
+        <div className="bar-track">
+          {segs.map(s => s.n > 0 && (
+            <div key={s.id} className="bar-seg" style={{ width: `${(s.n / total) * 100}%`, background: s.color }} title={`${s.id}: ${s.n}`}></div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginTop: 14 }}>
+          {VERDICT_OPTIONS.map(v => (
+            <LegendItem key={v.id} label={v.short} n={totals[v.id]} tone={v.tone} />
+          ))}
+          {totals.none > 0 && <LegendItem label="Oavgjort" n={totals.none} tone="none" />}
+        </div>
+      </div>
+
+      <div className="editorial-rule" style={{ marginBottom: 32 }}></div>
+
+      {/* Reason breakdown */}
+      {sortedReasons.length > 0 && (
+        <div style={{ marginBottom: 48 }}>
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 18 }}>
+            Skälen, rangordnade
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 48px' }}>
+            {sortedReasons.map(([id, n]) => (
+              <div key={id} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 30px', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--rule-soft)' }}>
+                <span className="serif" style={{ fontSize: 18 }}>{REASON_LABEL[id]}</span>
+                <div style={{ height: 4, background: 'var(--paper-3)' }}>
+                  <div style={{ height: '100%', width: `${(n / Math.max(...sortedReasons.map(r=>r[1]))) * 100}%`, background: 'var(--ink)' }}></div>
+                </div>
+                <span className="mono" style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'right' }}>{n}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Action lists */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 48 }}>
+        <ActionList
+          title="Snarast — flytta nu"
+          subtitle="namnge mottagare och vad de behöver för att ta över"
+          rows={rows.filter(r => r.verdict === 'now')}
+          tone="now"
+        />
+        <ActionList
+          title="Över tid — planera flytt"
+          subtitle="vad ska finnas på plats först?"
+          rows={rows.filter(r => r.verdict === 'later')}
+          tone="later"
+        />
+        <ActionList
+          title="Dela — inte ensam i framtiden"
+          subtitle="vem mer äger frågan med dig?"
+          rows={rows.filter(r => r.verdict === 'share')}
+          tone="share"
+        />
+        <ActionList
+          title="Stannar — ligger rätt"
+          subtitle="dessa är dina, fullt ut"
+          rows={rows.filter(r => r.verdict === 'yes')}
+          tone="yes"
+        />
+      </div>
+
+      {/* Closing prompt */}
+      <div style={{ background: 'var(--ink)', color: 'var(--paper)', padding: '40px 44px', marginTop: 24 }}>
+        <div className="mono" style={{ fontSize: 10.5, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.6, marginBottom: 16 }}>
+          En sista fråga
+        </div>
+        <div className="serif" style={{ fontSize: 30, lineHeight: 1.25, letterSpacing: '-0.015em', maxWidth: 820 }}>
+          Av allt du listade — <em>vilken enda sak</em> skulle göra störst skillnad om den flyttades imorgon? Säg det högt i gruppen.
+        </div>
+      </div>
+
+      <div style={{ marginTop: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button onClick={onBack} className="pill-counter" style={{ cursor: 'pointer' }}>
+          ← redigera tabellen
+        </button>
+        <button
+          onClick={() => window.print()}
+          className="pill-counter"
+          style={{ cursor: 'pointer', background: 'var(--ink)', color: 'var(--paper)', borderColor: 'var(--ink)' }}
+        >
+          skriv ut / spara pdf
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LegendItem({ label, n, tone }) {
+  const color =
+    tone === 'yes' ? 'var(--moss)' :
+    tone === 'share' ? 'var(--clay)' :
+    tone === 'later' ? 'var(--rust)' :
+    tone === 'now' ? 'var(--warn)' : 'var(--paper-3)';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ width: 10, height: 10, background: color, display: 'inline-block', borderRadius: 2 }}></span>
+      <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{label}</span>
+      <span className="mono" style={{ fontSize: 11, color: 'var(--ink-4)' }}>{n}</span>
+    </div>
+  );
+}
+
+function ActionList({ title, subtitle, rows, tone }) {
+  const accent =
+    tone === 'yes' ? 'var(--moss)' :
+    tone === 'share' ? 'var(--clay)' :
+    tone === 'later' ? 'var(--rust)' :
+    'var(--warn)';
+  return (
+    <div>
+      <div style={{ borderTop: `2px solid ${accent}`, paddingTop: 14, marginBottom: 14 }}>
+        <div className="serif" style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{title}</div>
+        <div className="mono" style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4, letterSpacing: '0.04em' }}>
+          {subtitle} · {rows.length} st
+        </div>
+      </div>
+      {rows.length === 0 ? (
+        <div className="serif" style={{ fontSize: 16, color: 'var(--ink-4)', fontStyle: 'italic' }}>—</div>
+      ) : (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {rows.map(r => (
+            <li key={r.id} style={{ paddingTop: 12, paddingBottom: 12, borderBottom: '1px solid var(--rule-soft)' }}>
+              <div style={{ fontSize: 14.5, color: 'var(--ink)', lineHeight: 1.45 }}>{r.task || <em style={{ color: 'var(--ink-4)' }}>(namnlös)</em>}</div>
+              {r.requires && tone !== 'yes' && (
+                <div className="serif" style={{ fontSize: 14, color: 'var(--ink-2)', fontStyle: 'italic', marginTop: 4, paddingLeft: 12, borderLeft: `1px solid ${accent}` }}>
+                  {r.requires}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

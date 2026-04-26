@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Workshop arkitekter — övningar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #F2EDE3;
+    --paper-2: #EBE4D6;
+    --ink: #1B1A16;
+    --ink-3: #6B6555;
+    --ink-4: #9A9281;
+    --rule: #C9BFA8;
+    --rule-soft: #D9D0BA;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    opacity: 0.35; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.09 0 0 0 0 0.07 0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  main { position: relative; z-index: 2; max-width: 880px; margin: 0 auto; padding: 80px 56px 120px; }
+  .eyebrow { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); }
+  h1 { font-family: 'Newsreader', Georgia, serif; font-weight: 500; font-size: 64px; line-height: 0.98; letter-spacing: -0.025em; margin: 18px 0 8px; }
+  h1 em { font-weight: 400; font-style: italic; }
+  .lede { font-family: 'Newsreader', Georgia, serif; font-size: 22px; line-height: 1.4; letter-spacing: -0.01em; color: var(--ink); max-width: 620px; margin: 14px 0 56px; }
+  .rule { height: 1px; background: linear-gradient(90deg, transparent, var(--rule) 8%, var(--rule) 92%, transparent); margin: 56px 0 32px; }
+  .list { list-style: none; padding: 0; margin: 0; }
+  .item { display: grid; grid-template-columns: 80px 1fr auto; gap: 24px; align-items: baseline; padding: 28px 0; border-bottom: 1px solid var(--rule-soft); }
+  .item:last-child { border-bottom: none; }
+  .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 28px; color: var(--ink-4); }
+  .item-title { font-family: 'Newsreader', Georgia, serif; font-size: 28px; line-height: 1.15; letter-spacing: -0.015em; color: var(--ink); }
+  .item-title em { font-weight: 400; font-style: italic; }
+  .item-sub { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+  .go { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); text-decoration: none; padding: 10px 18px; border: 1px solid var(--rule); border-radius: 999px; transition: background 120ms ease; }
+  .go:hover { background: var(--paper-2); }
+  a.row-link { color: inherit; text-decoration: none; display: contents; }
+  a.row-link:hover .item-title { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+  footer { margin-top: 80px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-4); }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<main>
+  <div class="eyebrow">Workshop arkitekter</div>
+  <h1>Övningar.</h1>
+  <p class="lede">Kortare övningar att göra under workshopen. Välj en och kör. Svaren sparas lokalt i din webbläsare.</p>
+
+  <div class="rule"></div>
+
+  <ul class="list">
+    <li class="item">
+      <a class="row-link" href="./ovning-03/">
+        <span class="num">03</span>
+        <span>
+          <span class="item-title">Vad gör jag, <em>och varför ligger det hos mig?</em></span>
+          <div class="item-sub">Lista vad du gör. Sätt ord på varför. Avgör om det är rätt. Identifiera vad som krävs om det ska flyttas.</div>
+        </span>
+        <span class="go">öppna →</span>
+      </a>
+    </li>
+  </ul>
+
+  <footer>Sparas i din webbläsare · ingen data lämnar enheten</footer>
+</main>
+</body>
+</html>
