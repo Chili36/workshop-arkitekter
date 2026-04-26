@@ -418,18 +418,19 @@ function App() {
       <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, marginBottom: 48 }}>
         <div>
           <div className="mono" style={{ fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 14 }}>
-            Den egentliga övningen
+            Syfte
           </div>
           <p className="serif" style={{ fontSize: 22, lineHeight: 1.4, margin: 0, color: 'var(--ink)' }}>
-            Lista vad du gör. Sätt ord på <em>varför</em> det hamnade hos dig.
-            Avgör om det är rätt. Identifiera vad som krävs om det ska flyttas.
+            Syftet är att se vilka uppgifter som ligger rätt, vilka som behöver delas
+            och vilka som <em>egentligen borde ligga</em> hos en annan roll, ett team
+            eller ett forum.
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Step n="01" t="Lista" d="En rad per uppgift. Stort som smått. Inget filter." />
           <Step n="02" t="Förklara" d="Varför hamnade just den här hos dig? Kryssa det som stämmer." />
           <Step n="03" t="Avgör" d="Är det rätt person? Välj ett av fyra svar." />
-          <Step n="04" t="Lös" d="Om den ska flyttas — vad krävs konkret för att det ska kunna ske?" />
+          <Step n="04" t="Placera" d="Om inte hos dig — var borde det ligga? Ett team, en roll, ett forum." />
         </div>
       </section>
 
@@ -471,9 +472,20 @@ function App() {
             "Jag hade tid" och "ingen annan äger frågan" är vanligare än man tror.
           </div>
           <div>
-            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 4 }}>Konkret om flytt</div>
-            "Vad krävs?" — namnge personen, mandatet, eller verktyget. Inte "tydligare struktur".
+            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 4 }}>Konkret om plats</div>
+            "Var borde det ligga?" — namnge teamet, rollen, eller forumet. Inte "tydligare struktur".
           </div>
+        </div>
+      )}
+
+      {view === 'exercise' && (
+        <div style={{ display: 'flex', gap: 14, alignItems: 'baseline', padding: '20px 0 18px' }}>
+          <span className="mono" style={{ fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', flexShrink: 0, paddingTop: 4 }}>
+            Så här fyller du i
+          </span>
+          <p className="serif" style={{ fontSize: 17, lineHeight: 1.45, margin: 0, color: 'var(--ink-2)', fontStyle: 'italic' }}>
+            Fyll i 3–5 uppgifter som <em style={{ fontStyle: 'normal', fontWeight: 500, color: 'var(--ink)' }}>återkommer, tar tid, gör dig till flaskhals eller ligger oklart i rollen</em>. Ta inte med allt du gör. Ta inte med enstaka småfrågor.
+          </p>
         </div>
       )}
 
@@ -566,7 +578,7 @@ function Table({ rows, updateRow, toggleReason, addRow, removeRow }) {
         </div>
         <div className="col-head">
           <div className="label">Kolumn 4</div>
-          <div className="question">Om inte, vad krävs?</div>
+          <div className="question">Om inte, var borde det ligga?</div>
         </div>
         <div className="col-head"></div>
       </div>
@@ -675,11 +687,9 @@ function Row({ row, idx, updateRow, toggleReason, removeRow, canRemove }) {
           value={row.requires}
           onChange={e => updateRow(row.id, { requires: e.target.value })}
           placeholder={
-            row.verdict === 'yes' ? '— ligger rätt, inget krävs' :
-            row.verdict === 'share' ? 'vem delar? och hur ser delningen ut?' :
-            row.verdict === 'later' ? 'vad ska finnas på plats först?' :
-            row.verdict === 'now' ? 'till vem? vad behöver de för att ta över?' :
-            'konkret: person, mandat, verktyg, tid'
+            row.verdict === 'yes'
+              ? '— ligger rätt här'
+              : 't.ex. teamet, projektet, tech lead, arkitektgruppen, produktägare, extern kompetens, oklart'
           }
           rows={3}
           disabled={row.verdict === 'yes'}
