@@ -291,28 +291,30 @@ async function saveResponse({ name, rows, date }) {
 
 async function clearResponse() {
   const session_id = getSessionId();
-  const url = SUPABASE_URL + '/rest/v1/workshop_responses' +
-    '?exercise_id=eq.' + encodeURIComponent(EXERCISE_ID) +
-    '&session_id=eq.' + encodeURIComponent(session_id);
-  const res = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
-    },
-    body: JSON.stringify({
-      name: null,
-      payload: { rows: [] },
-      updated_at: new Date().toISOString(),
-    }),
+  const filter = '?exercise_id=eq.' + encodeURIComponent(EXERCISE_ID) +
+                 '&session_id=eq.' + encodeURIComponent(session_id);
+  const headers = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+  };
+  const delRes = await fetch(SUPABASE_URL + '/rest/v1/workshop_responses' + filter, {
+    method: 'DELETE',
+    headers,
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error('Supabase ' + res.status + ': ' + text);
+  if (!delRes.ok) {
+    throw new Error('Supabase ' + delRes.status + ': ' + await delRes.text());
   }
-  return res.json();
+  // Without a DELETE RLS policy, Supabase returns 204 even when nothing was
+  // removed. Verify the row is actually gone by reading it back.
+  const checkRes = await fetch(SUPABASE_URL + '/rest/v1/workshop_responses' + filter + '&select=id', { headers });
+  if (!checkRes.ok) {
+    throw new Error('Supabase ' + checkRes.status + ': ' + await checkRes.text());
+  }
+  const remaining = await checkRes.json();
+  if (Array.isArray(remaining) && remaining.length > 0) {
+    throw new Error('Raden finns kvar efter DELETE — saknas DELETE-policy i Supabase?');
+  }
+  return remaining;
 }
 
 const REASON_OPTIONS = [
