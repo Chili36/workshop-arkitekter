@@ -308,12 +308,12 @@ const VERDICT_OPTIONS = [
 ];
 
 const SAMPLE_TASKS = [
-  'Godkänner tidplaner åt projektledarna',
-  'Svarar på tekniska frågor från entreprenör',
-  'Kvalitetssäkrar ritningar inför leverans',
-  'Bokar interna möten åt teamet',
-  'Tar emot beställarens småförändringar',
-  'Skriver veckorapporter till ledningen',
+  'Granskar PR:er åt utvecklingsteamet',
+  'Svarar på tekniska frågor i Slack',
+  'Felsöker prod-incidenter när jouren larmar',
+  'Skriver tickets och bryter ner arbete åt utvecklarna',
+  'Onboardar nya utvecklare',
+  'Hoppar in och kodar features när teamet ligger efter',
 ];
 
 function makeRow(seed = '') {
@@ -643,7 +643,7 @@ function Row({ row, idx, updateRow, toggleReason, removeRow, canRemove }) {
           className="field-input"
           value={row.task}
           onChange={e => updateRow(row.id, { task: e.target.value })}
-          placeholder="t.ex. Godkänner ändringar i bygghandlingar"
+          placeholder="t.ex. Felsöker prod-buggar tillsammans med teamet"
           rows={3}
         />
       </div>
