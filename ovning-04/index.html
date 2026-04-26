@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Övning 04 — Vad gör vi åt det? (workshop leader)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --paper: #F2EDE3;
+    --paper-2: #EBE4D6;
+    --paper-3: #E2D9C6;
+    --ink: #1B1A16;
+    --ink-2: #3A372E;
+    --ink-3: #6B6555;
+    --ink-4: #9A9281;
+    --rule: #C9BFA8;
+    --rule-soft: #D9D0BA;
+    --clay: oklch(0.55 0.11 45);
+    --moss: oklch(0.5 0.06 140);
+    --rust: oklch(0.5 0.13 35);
+    --warn: oklch(0.55 0.14 25);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    opacity: 0.35; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.09 0 0 0 0 0.07 0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  #root { position: relative; z-index: 2; max-width: 1480px; margin: 0 auto; padding: 48px 56px 120px; }
+  .serif { font-family: 'Newsreader', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+  .mono  { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  input, textarea { font-family: inherit; color: inherit; background: transparent; border: 0; outline: 0; }
+  textarea:focus { background: rgba(255,255,255,0.4); }
+  textarea { resize: vertical; }
+
+  .editorial-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rule) 8%, var(--rule) 92%, transparent);
+  }
+
+  .row-grid {
+    display: grid;
+    grid-template-columns: 36px 1fr 1fr 1fr 1fr 36px;
+    border-left: 1px solid var(--rule-soft);
+    border-right: 1px solid var(--rule-soft);
+  }
+  .col-head {
+    padding: 18px 16px 16px;
+    background: var(--paper-2);
+    border-right: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule);
+  }
+  .col-head:last-child { border-right: 0; }
+  .col-head .label {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 8px;
+  }
+  .col-head .question {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 19px; line-height: 1.25; letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .cell {
+    padding: 14px 16px;
+    background: transparent;
+    border-right: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule-soft);
+    min-height: 110px;
+    display: flex; align-items: stretch;
+  }
+  .cell:last-child { border-right: 0; }
+  .cell-num {
+    background: var(--paper-2);
+    align-items: flex-start;
+    justify-content: center;
+    padding: 16px 6px;
+  }
+  .num-label {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 11px; color: var(--ink-4); letter-spacing: 0.05em;
+  }
+  .cell-del {
+    background: var(--paper-2);
+    align-items: flex-start;
+    justify-content: center;
+    padding: 16px 6px;
+  }
+  .del-btn {
+    background: transparent; border: 0; cursor: pointer;
+    color: var(--ink-4); font-size: 16px; padding: 4px 8px;
+  }
+  .del-btn:hover { color: var(--warn); }
+  .del-btn:disabled { color: var(--paper-3); cursor: not-allowed; }
+  .field {
+    width: 100%;
+    font-size: 15px; line-height: 1.5;
+    border: 0; outline: 0;
+    background: transparent;
+    resize: none;
+  }
+  .field::placeholder { color: var(--ink-4); font-style: italic; }
+
+  .pill-counter {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-3); background: transparent;
+  }
+
+  .add-row-btn {
+    width: 100%;
+    text-align: center;
+    padding: 16px;
+    background: transparent;
+    border: 1px solid var(--rule-soft);
+    border-top: 0;
+    cursor: pointer;
+    font-family: 'Newsreader', Georgia, serif;
+    font-style: italic;
+    font-size: 13.5px;
+    color: var(--ink-3);
+    transition: background 120ms ease;
+  }
+  .add-row-btn:hover { background: var(--paper-2); color: var(--ink); }
+
+  .leader-banner {
+    background: var(--ink); color: var(--paper);
+    padding: 10px 18px;
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  @media (max-width: 1080px) {
+    .row-grid { grid-template-columns: 32px 1fr 1fr 32px; }
+    .col-head:nth-child(4), .col-head:nth-child(5),
+    .cell:nth-child(4), .cell:nth-child(5) { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useMemo } = React;
+
+const STORAGE_KEY = 'workshop_arkitekter_ovning_04_v1';
+const EXERCISE_ID = 'ovning-04';
+// Fixed leader session_id so the same row is updated regardless of browser.
+const LEADER_SESSION_ID = 'b9c3a2f1-7e44-4f9b-8d2a-1c5f8a2b3d04';
+const SUPABASE_URL = 'https://gojgcksmhlxtuqhkylcy.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_1ciI0KDhicZvb4tbVETS8w_yEIJEr2W';
+
+const COLUMNS = [
+  { id: 'nulage', label: 'Kolumn 1', question: 'Nuläge',       placeholder: 'vad ser vi i dag?' },
+  { id: 'onskat', label: 'Kolumn 2', question: 'Önskat läge',  placeholder: 'vad vill vi i stället?' },
+  { id: 'glapp',  label: 'Kolumn 3', question: 'Glapp',        placeholder: 'vad är det som skiljer?' },
+  { id: 'behov',  label: 'Kolumn 4', question: 'Vad behövs?',  placeholder: 'konkret: utbildning, mandat, forum, person' },
+];
+
+const SEED_ROWS = [
+  { nulage: 'OpenShift hamnar hos Martin',      onskat: 'Teamen klarar normal felsökning',     glapp: 'Teamen saknar förmåga/stöd',         behov: 'Utbildning, checklistor, supporttrappa' },
+  { nulage: 'Arkitekter blir projektmedlemmar', onskat: 'Arkitekter ger avgränsat stöd',       glapp: 'Stoppregler/mandat saknas',          behov: 'Tydligare prioritering och nej-mandat' },
+  { nulage: 'Projekt går till person',          onskat: 'Projekt går via forum/prioritering', glapp: 'Acceptans saknas',                   behov: 'Gemensam ingång och chefsstöd' },
+  { nulage: 'Teamen lyfter svåra beslut',       onskat: 'Teamen äger beslut inom eget system', glapp: 'Osäkerhet/kompetens saknas',         behov: 'Tech lead-stöd och tydliga principer' },
+];
+
+function makeRow(seed) {
+  const id = Math.random().toString(36).slice(2, 9);
+  return { id, nulage: '', onskat: '', glapp: '', behov: '', ...(seed || {}) };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
+}
+function saveLocal(state) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+async function saveResponse({ rows, date }) {
+  const url = SUPABASE_URL + '/rest/v1/workshop_responses?on_conflict=exercise_id,session_id';
+  const filled = (rows || []).filter(r => (r.nulage || r.onskat || r.glapp || r.behov || '').trim().length > 0);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates,return=representation',
+    },
+    body: JSON.stringify({
+      exercise_id: EXERCISE_ID,
+      session_id: LEADER_SESSION_ID,
+      name: 'Workshop leader',
+      payload: { rows: filled, date },
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  if (!res.ok) throw new Error('Supabase ' + res.status + ': ' + await res.text());
+  return res.json();
+}
+
+async function clearResponse() {
+  const filter = '?exercise_id=eq.' + encodeURIComponent(EXERCISE_ID) +
+                 '&session_id=eq.' + encodeURIComponent(LEADER_SESSION_ID);
+  const headers = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+  };
+  const delRes = await fetch(SUPABASE_URL + '/rest/v1/workshop_responses' + filter, { method: 'DELETE', headers });
+  if (!delRes.ok) throw new Error('Supabase ' + delRes.status + ': ' + await delRes.text());
+  const checkRes = await fetch(SUPABASE_URL + '/rest/v1/workshop_responses' + filter + '&select=id', { headers });
+  if (!checkRes.ok) throw new Error('Supabase ' + checkRes.status + ': ' + await checkRes.text());
+  const remaining = await checkRes.json();
+  if (Array.isArray(remaining) && remaining.length > 0) {
+    throw new Error('Raden finns kvar efter DELETE.');
+  }
+  return remaining;
+}
+
+function App() {
+  const initial = loadState();
+  const [rows, setRows] = useState(initial?.rows || SEED_ROWS.map(s => makeRow(s)));
+  const [date, setDate] = useState(initial?.date || new Date().toLocaleDateString('sv-SE', { year:'numeric', month:'long', day:'numeric' }));
+  const [saveState, setSaveState] = useState('idle');
+  const [savedAt, setSavedAt] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => { saveLocal({ rows, date }); }, [rows, date]);
+
+  const updateRow = (id, patch) => {
+    setRows(rs => rs.map(r => r.id === id ? { ...r, ...patch } : r));
+    if (saveState === 'saved') setSaveState('idle');
+  };
+  const addRow = () => setRows(rs => [...rs, makeRow()]);
+  const removeRow = (id) => setRows(rs => rs.length > 1 ? rs.filter(r => r.id !== id) : rs);
+
+  const filledCount = useMemo(() =>
+    rows.filter(r => (r.nulage || r.onskat || r.glapp || r.behov || '').trim().length > 0).length
+  , [rows]);
+
+  const handleSave = async () => {
+    setSaveState('saving');
+    setErrorMsg('');
+    try {
+      await saveResponse({ rows, date });
+      setSavedAt(new Date());
+      setSaveState('saved');
+    } catch (e) {
+      setErrorMsg(String(e.message || e));
+      setSaveState('error');
+    }
+  };
+
+  const handleClear = async () => {
+    if (!confirm('Rensa alla rader och börja om? Detta tar även bort den sparade versionen från databasen.')) return;
+    try {
+      await clearResponse();
+    } catch (e) {
+      alert('Kunde inte rensa i databasen.\n\n' + (e.message || e));
+      return;
+    }
+    setRows([makeRow(), makeRow(), makeRow(), makeRow()]);
+    setSaveState('idle');
+    setSavedAt(null);
+  };
+
+  return (
+    <div>
+      {/* MASTHEAD */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 56, alignItems: 'end', marginBottom: 28 }}>
+        <div>
+          <div className="leader-banner">
+            <span>★ Workshop leader · endast jag</span>
+          </div>
+          <div className="mono" style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
+            Workshop arkitekter · Övning 04 · Syntes
+          </div>
+          <h1 className="serif" style={{ fontSize: 64, lineHeight: 0.98, letterSpacing: '-0.025em', margin: '14px 0 0', fontWeight: 500 }}>
+            Vad gör vi <em style={{ fontWeight: 400 }}>åt det?</em>
+          </h1>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+          <div className="serif" style={{ fontSize: 22, color: 'var(--ink-3)', fontStyle: 'italic' }}>
+            från nuläge till åtgärd
+          </div>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--ink-4)', letterSpacing: '0.08em' }}>{date}</div>
+        </div>
+      </div>
+
+      <div className="editorial-rule" style={{ marginBottom: 28 }}></div>
+
+      <p className="serif" style={{ fontSize: 17, lineHeight: 1.5, fontStyle: 'italic', color: 'var(--ink-2)', margin: '0 0 24px', maxWidth: 880 }}>
+        Workshopledarens syntesvy. Auditoriet följer på <span className="mono" style={{ fontStyle: 'normal', fontSize: 13, background: 'var(--paper-2)', padding: '1px 6px', letterSpacing: '0.05em' }}>./admin/</span> — den uppdateras live när du sparar.
+      </p>
+
+      {/* CONTROLS */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <span className="pill-counter">
+          <strong style={{ color: 'var(--ink)' }}>{filledCount}</strong>&nbsp;rad{filledCount === 1 ? '' : 'er'} ifyllda
+        </span>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {saveState === 'saved' && savedAt && (
+            <span className="mono" style={{ fontSize: 11, color: 'var(--ink-3)', letterSpacing: '0.08em' }}>
+              sparat {savedAt.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          {saveState === 'error' && (
+            <span className="mono" title={errorMsg} style={{ fontSize: 11, color: 'var(--warn)', letterSpacing: '0.08em' }}>
+              kunde inte spara
+            </span>
+          )}
+          <button
+            className="pill-counter"
+            onClick={handleSave}
+            disabled={saveState === 'saving' || filledCount === 0}
+            style={{
+              cursor: saveState === 'saving' || filledCount === 0 ? 'not-allowed' : 'pointer',
+              background: saveState === 'saved' ? 'var(--paper-2)' : 'var(--ink)',
+              color: saveState === 'saved' ? 'var(--ink)' : 'var(--paper)',
+              borderColor: saveState === 'saved' ? 'var(--rule)' : 'var(--ink)',
+              opacity: filledCount === 0 ? 0.4 : 1,
+            }}
+          >
+            {saveState === 'saving' ? 'sparar…' :
+             saveState === 'saved'  ? 'sparat ✓' :
+             saveState === 'error'  ? 'försök igen' :
+                                      'spara & projicera'}
+          </button>
+          <button className="pill-counter" onClick={handleClear} style={{ cursor: 'pointer' }}>
+            rensa
+          </button>
+        </div>
+      </div>
+
+      {/* TABLE */}
+      <div style={{ borderTop: '1px solid var(--rule)' }}>
+        <div className="row-grid">
+          <div className="col-head" style={{ padding: '18px 6px' }}>
+            <span className="mono" style={{ fontSize: 10, color: 'var(--ink-4)' }}>#</span>
+          </div>
+          {COLUMNS.map(c => (
+            <div key={c.id} className="col-head">
+              <div className="label">{c.label}</div>
+              <div className="question">{c.question}</div>
+            </div>
+          ))}
+          <div className="col-head"></div>
+        </div>
+        {rows.map((r, idx) => (
+          <div key={r.id} className="row-grid">
+            <div className="cell cell-num">
+              <span className="num-label">{String(idx + 1).padStart(2, '0')}</span>
+            </div>
+            {COLUMNS.map(c => (
+              <div key={c.id} className="cell">
+                <textarea
+                  className="field"
+                  rows={3}
+                  placeholder={c.placeholder}
+                  value={r[c.id] || ''}
+                  onChange={e => updateRow(r.id, { [c.id]: e.target.value })}
+                />
+              </div>
+            ))}
+            <div className="cell cell-del">
+              <button
+                className="del-btn"
+                onClick={() => removeRow(r.id)}
+                disabled={rows.length === 1}
+                title="ta bort raden"
+              >×</button>
+            </div>
+          </div>
+        ))}
+        <button className="add-row-btn" onClick={addRow}>
+          + lägg till en till rad
+        </button>
+      </div>
+
+      {/* FOOTER */}
+      <footer style={{ marginTop: 80, paddingTop: 24, borderTop: '1px solid var(--rule-soft)', display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-4)' }} className="mono">
+        <span>Workshop arkitekter</span>
+        <span>Övning 04 · workshop leader</span>
+        <span>spara för att projicera till auditoriet</span>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
