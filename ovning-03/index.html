@@ -247,6 +247,47 @@
 const { useState, useEffect, useRef, useMemo } = React;
 
 const STORAGE_KEY = 'workshop_arkitekter_ovning_03_v1';
+const SESSION_KEY = 'workshop_arkitekter_session_id_v1';
+const EXERCISE_ID = 'ovning-03';
+const SUPABASE_URL = 'https://gojgcksmhlxtuqhkylcy.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_1ciI0KDhicZvb4tbVETS8w_yEIJEr2W';
+
+function getSessionId() {
+  let id = localStorage.getItem(SESSION_KEY);
+  if (!id) {
+    id = (crypto.randomUUID && crypto.randomUUID()) ||
+         (Date.now().toString(16) + '-' + Math.random().toString(16).slice(2, 10));
+    localStorage.setItem(SESSION_KEY, id);
+  }
+  return id;
+}
+
+async function saveResponse({ name, rows, date }) {
+  const session_id = getSessionId();
+  const filled = (rows || []).filter(r => r.task && r.task.trim().length > 0);
+  const url = SUPABASE_URL + '/rest/v1/workshop_responses?on_conflict=exercise_id,session_id';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates,return=representation',
+    },
+    body: JSON.stringify({
+      exercise_id: EXERCISE_ID,
+      session_id,
+      name: (name && name.trim()) || null,
+      payload: { rows: filled, date },
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error('Supabase ' + res.status + ': ' + text);
+  }
+  return res.json();
+}
 
 const REASON_OPTIONS = [
   { id: 'roll', label: 'min roll' },
@@ -450,6 +491,8 @@ function App() {
           rows={filled}
           totals={totals}
           reasonTallies={reasonTallies}
+          name={name}
+          date={date}
           onBack={() => setView('exercise')}
         />
       )}
@@ -658,7 +701,24 @@ function Row({ row, idx, updateRow, toggleReason, removeRow, canRemove }) {
   );
 }
 
-function Reflection({ rows, totals, reasonTallies, onBack }) {
+function Reflection({ rows, totals, reasonTallies, name, date, onBack }) {
+  const [saveState, setSaveState] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
+  const [savedAt, setSavedAt] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleSave = async () => {
+    setSaveState('saving');
+    setErrorMsg('');
+    try {
+      await saveResponse({ name, rows, date });
+      setSavedAt(new Date());
+      setSaveState('saved');
+    } catch (e) {
+      setErrorMsg(String(e.message || e));
+      setSaveState('error');
+    }
+  };
+
   if (rows.length === 0) {
     return (
       <div style={{ padding: '80px 32px', textAlign: 'center', border: '1px solid var(--rule-soft)', borderTop: 0 }}>
@@ -814,17 +874,46 @@ function Reflection({ rows, totals, reasonTallies, onBack }) {
         </div>
       </div>
 
-      <div style={{ marginTop: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ marginTop: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <button onClick={onBack} className="pill-counter" style={{ cursor: 'pointer' }}>
           ← redigera tabellen
         </button>
-        <button
-          onClick={() => window.print()}
-          className="pill-counter"
-          style={{ cursor: 'pointer', background: 'var(--ink)', color: 'var(--paper)', borderColor: 'var(--ink)' }}
-        >
-          skriv ut / spara pdf
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          {saveState === 'saved' && savedAt && (
+            <span className="mono" style={{ fontSize: 11, color: 'var(--ink-3)', letterSpacing: '0.08em' }}>
+              sparat {savedAt.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          {saveState === 'error' && (
+            <span className="mono" title={errorMsg} style={{ fontSize: 11, color: 'var(--warn)', letterSpacing: '0.08em' }}>
+              kunde inte spara
+            </span>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saveState === 'saving' || rows.length === 0}
+            className="pill-counter"
+            style={{
+              cursor: saveState === 'saving' || rows.length === 0 ? 'not-allowed' : 'pointer',
+              background: saveState === 'saved' ? 'var(--paper-2)' : 'var(--ink)',
+              color: saveState === 'saved' ? 'var(--ink)' : 'var(--paper)',
+              borderColor: saveState === 'saved' ? 'var(--rule)' : 'var(--ink)',
+              opacity: rows.length === 0 ? 0.4 : 1,
+            }}
+          >
+            {saveState === 'saving' ? 'sparar…' :
+             saveState === 'saved'  ? 'sparat ✓' :
+             saveState === 'error'  ? 'försök igen' :
+                                      'spara svaren'}
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="pill-counter"
+            style={{ cursor: 'pointer', background: 'var(--paper-2)', color: 'var(--ink)', borderColor: 'var(--rule)' }}
+          >
+            skriv ut / spara pdf
+          </button>
+        </div>
       </div>
     </div>
   );
