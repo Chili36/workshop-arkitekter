@@ -850,13 +850,13 @@ function Reflection({ rows, totals, reasonTallies, name, date, onBack }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 48 }}>
         <ActionList
           title="Snarast — flytta nu"
-          subtitle="namnge mottagare och vad de behöver för att ta över"
+          subtitle="var ska den ligga? namnge teamet, rollen eller forumet"
           rows={rows.filter(r => r.verdict === 'now')}
           tone="now"
         />
         <ActionList
           title="Över tid — planera flytt"
-          subtitle="vad ska finnas på plats först?"
+          subtitle="var borde den ligga på sikt?"
           rows={rows.filter(r => r.verdict === 'later')}
           tone="later"
         />
