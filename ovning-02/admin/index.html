@@ -107,31 +107,45 @@ function isFilledAnswers(answers) {
 }
 
 function aggregate(rows) {
-  const participants = [];
-  // Map role.id → col.id → array of {name, text}
+  // Rows are append-only history (multiple saves per participant). We dedupe
+  // per (session_id, role_id, col_id, text). Input rows arrive ordered
+  // updated_at desc, so the latest name per session wins.
   const grid = {};
   for (const r of ROLES) {
     grid[r.id] = {};
     for (const c of COLUMNS) grid[r.id][c.id] = [];
   }
+  const seenCells = new Set();
+  const sessionFirstName = {};
+  const participantSessions = new Set();
   let cellsFilled = 0;
 
   for (const row of rows) {
     const answers = row.payload && row.payload.answers;
     if (!isFilledAnswers(answers)) continue;
-    participants.push({ name: row.name || '', session_id: row.session_id });
+    const sid = row.session_id;
+    participantSessions.add(sid);
+    if (row.name && row.name.trim() && !sessionFirstName[sid]) {
+      sessionFirstName[sid] = row.name.trim();
+    }
     for (const role of ROLES) {
       const a = answers[role.id];
       if (!a) continue;
       for (const col of COLUMNS) {
         const text = a[col.id] && String(a[col.id]).trim();
-        if (text) {
-          grid[role.id][col.id].push({ name: row.name || '', text });
-          cellsFilled++;
-        }
+        if (!text) continue;
+        const key = sid + '|' + role.id + '|' + col.id + '|' + text;
+        if (seenCells.has(key)) continue;
+        seenCells.add(key);
+        grid[role.id][col.id].push({ name: sessionFirstName[sid] || row.name || '', text });
+        cellsFilled++;
       }
     }
   }
+  const participants = Array.from(participantSessions).map(sid => ({
+    session_id: sid,
+    name: sessionFirstName[sid] || '',
+  }));
   return { participants, grid, cellsFilled };
 }
 

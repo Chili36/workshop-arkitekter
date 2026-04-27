@@ -116,10 +116,11 @@ const COLUMNS = [
 ];
 
 async function fetchLeaderRow() {
+  // History rows accumulate per save; we only want the latest leader state.
   const url = SUPABASE_URL + '/rest/v1/workshop_responses' +
     '?exercise_id=eq.' + encodeURIComponent(EXERCISE_ID) +
     '&session_id=eq.' + encodeURIComponent(LEADER_SESSION_ID) +
-    '&select=payload,updated_at&limit=1';
+    '&select=payload,updated_at&order=updated_at.desc&limit=1';
   const res = await fetch(url, {
     headers: {
       'apikey': SUPABASE_ANON_KEY,

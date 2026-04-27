@@ -204,7 +204,9 @@ function saveLocal(state) {
 }
 
 async function saveResponse({ rows, date }) {
-  const url = SUPABASE_URL + '/rest/v1/workshop_responses?on_conflict=exercise_id,session_id';
+  // Append-only: every save inserts a new row. Audience admin reads the latest
+  // by updated_at desc so it always projects the current leader state.
+  const url = SUPABASE_URL + '/rest/v1/workshop_responses';
   const filled = (rows || []).filter(r => (r.nulage || r.onskat || r.glapp || r.behov || '').trim().length > 0);
   const res = await fetch(url, {
     method: 'POST',
@@ -212,7 +214,7 @@ async function saveResponse({ rows, date }) {
       'apikey': SUPABASE_ANON_KEY,
       'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
       'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates,return=representation',
+      'Prefer': 'return=representation',
     },
     body: JSON.stringify({
       exercise_id: EXERCISE_ID,

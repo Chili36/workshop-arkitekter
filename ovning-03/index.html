@@ -265,14 +265,17 @@ function getSessionId() {
 async function saveResponse({ name, rows, date }) {
   const session_id = getSessionId();
   const filled = (rows || []).filter(r => r.task && r.task.trim().length > 0);
-  const url = SUPABASE_URL + '/rest/v1/workshop_responses?on_conflict=exercise_id,session_id';
+  // Append-only: every save inserts a new row. Admin dedupes per (session_id, task_text)
+  // so re-saving the same content doesn't duplicate on the wall, but anything ever
+  // typed-then-deleted is preserved.
+  const url = SUPABASE_URL + '/rest/v1/workshop_responses';
   const res = await fetch(url, {
     method: 'POST',
     headers: {
       'apikey': SUPABASE_ANON_KEY,
       'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
       'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates,return=representation',
+      'Prefer': 'return=representation',
     },
     body: JSON.stringify({
       exercise_id: EXERCISE_ID,

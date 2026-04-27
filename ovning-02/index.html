@@ -179,14 +179,16 @@ function getSessionId() {
 
 async function saveResponse({ name, answers, date }) {
   const session_id = getSessionId();
-  const url = SUPABASE_URL + '/rest/v1/workshop_responses?on_conflict=exercise_id,session_id';
+  // Append-only: every save inserts a new row. Admin dedupes per cell text so
+  // anything ever typed survives even if the participant later edits or clears.
+  const url = SUPABASE_URL + '/rest/v1/workshop_responses';
   const res = await fetch(url, {
     method: 'POST',
     headers: {
       'apikey': SUPABASE_ANON_KEY,
       'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
       'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates,return=representation',
+      'Prefer': 'return=representation',
     },
     body: JSON.stringify({
       exercise_id: EXERCISE_ID,
